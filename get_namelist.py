@@ -156,8 +156,6 @@ if __name__ == '__main__':
                         continue
 
                     syllabus_req = syllabus_from_curriculum(acixstore, no.text)
-                    ques = open("./ques", "w")
-                    print(syllabus_req.text, no.text, file=ques)
                     cou_dict = course_from_syllabus(syllabus_req.text)
                     syllabus_file_name = gen_file_name(cfg.year_semester_dict[year_semester], cou_dict)
                     # print(cfg.cou_codes[re.sub("[0-9]", "", cou_dict['no'].strip())], file=log)
@@ -170,7 +168,6 @@ if __name__ == '__main__':
                     keyword_freq_list = keywordAnalyser(join(str(folder),fName))
                     data = [cfg.cou_codes[cou_code], cou_dict['name_zh'], '', fName] + keyword_freq_list
                     w.writerow(data)
-                    ques.close()
 
 
             log.close()
