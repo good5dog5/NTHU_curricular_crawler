@@ -3,6 +3,7 @@
 
 import re
 import os
+from os.path import join as join
 import sys
 import subprocess
 
@@ -96,7 +97,7 @@ def download_syllabus_file(path, req, cou_dict, filename):
     if cou_dict['has_attachment']:
 
         fName = "".join([filename, ".pdf"])
-        full_path = os.path.join(path, fName)
+        full_path = join(path, fName)
         pdf_url = "https://www.ccxp.nthu.edu.tw/" + cou_dict['attachment_url'][0]
         res = get(pdf_url)
 
@@ -107,7 +108,7 @@ def download_syllabus_file(path, req, cou_dict, filename):
 
     else: 
         fName = "".join([filename, ".txt"])
-        full_path = os.path.join(path, fName)
+        full_path = join(path, fName)
 
         with open(full_path, "w") as txt:
             txt.write(cou_dict["syllabus"])
@@ -133,7 +134,7 @@ if __name__ == '__main__':
 
         for year_semester in sorted(year_semester_dict.keys()):
 
-            folder = os.path.join("./syllabus_download", year_semester_dict[year_semester])
+            folder = join("./syllabus_download", year_semester_dict[year_semester])
             if not os.path.exists(folder):
                 os.makedirs(folder)
 
