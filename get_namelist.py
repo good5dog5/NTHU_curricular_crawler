@@ -20,7 +20,7 @@ try:
 except ImportError:
     Entrance = None
 
-from config import cou_codes, course_url, year_semester_dict, id_2_pass_list, ROOT_DIR
+import config as cfg
 import csv 
 import logging
 
@@ -70,19 +70,19 @@ def get_course_no_list(treeObj):
 
 def gen_file_name(ys, cou_dict):
 
-    dept = cou_codes[re.sub("[0-9]", "", cou_dict['no'].strip())]
+    dept = cfg.cou_codes[re.sub("[0-9]", "", cou_dict['no'].strip())]
     return "-".join(s for s in [ys, dept, cou_dict['no'], cou_dict['name_zh']]).replace("/", "-")
 
 def syllabus_from_curriculum(acixstore, cou_no):
     data = { 'ACIXSTORE': acixstore, 'c_key': cou_no }
-    req = get(course_url['syllabus'], params=data)
+    req = get(cfg.course_url['syllabus'], params=data)
     req.encoding = "cp950"
     return req
 
 def cou_code_2_curriculum(session, acixstore, cou_code, auth_num, ys):
 
     return  session.post(
-        course_url['curriculum'],
+        cfg.course_url['curriculum'],
         data = {
             'ACIXSTORE' : acixstore,
             'YS' : ys,
@@ -128,20 +128,20 @@ def keywordAnalyser(fname):
 
 if __name__ == '__main__':
 
-    acixstore, auth_num = get_auth_pair(course_url['curriculum_entry'])
+    acixstore, auth_num = get_auth_pair(cfg.course_url['curriculum_entry'])
 
     with FuturesSession(max_workers=1) as session:
 
-        for year_semester in sorted(year_semester_dict.keys()):
+        for year_semester in sorted(cfg.year_semester_dict.keys()):
 
-            folder = join("./syllabus_download", year_semester_dict[year_semester])
+            folder = join("./syllabus_download", cfg.year_semester_dict[year_semester])
             if not os.path.exists(folder):
                 os.makedirs(folder)
 
-            log = open( os.path.join(folder, "log"), "w")
-            log_csv = open( os.path.join(folder, "log.csv"), "w")
+            log = open( join(folder, "log"), "w")
+            log_csv = open( join(folder, "log.csv"), "w")
 
-            for cou_code in cou_codes.keys():
+            for cou_code in cfg.cou_codes.keys():
 
                 curriculum = cou_code_2_curriculum(session, acixstore, cou_code, auth_num, year_semester) 
                 curriculum_req = curriculum.result()
@@ -151,7 +151,7 @@ if __name__ == '__main__':
                 course_no_list   = get_course_no_list(curriculum_text)
                 for no in course_no_list:
 
-                    if no.text in id_2_pass_list:
+                    if no.text in cfg.id_2_pass_list:
                         print("{0} been passed".format(no.text))
                         continue
 
@@ -159,15 +159,16 @@ if __name__ == '__main__':
                     ques = open("./ques", "w")
                     print(syllabus_req.text, no.text, file=ques)
                     cou_dict = course_from_syllabus(syllabus_req.text)
-                    syllabus_file_name = gen_file_name(year_semester_dict[year_semester], cou_dict)
-                    # print(cou_codes[re.sub("[0-9]", "", cou_dict['no'].strip())], file=log)
+                    syllabus_file_name = gen_file_name(cfg.year_semester_dict[year_semester], cou_dict)
+                    # print(cfg.cou_codes[re.sub("[0-9]", "", cou_dict['no'].strip())], file=log)
 
                     fName = download_syllabus_file(folder, syllabus_req, cou_dict, syllabus_file_name )
-                    print("{0:>10} {1:>30} {2:>50}".format(cou_codes[cou_code], cou_dict['name_zh'], fName), file=log)
+                    print("{0:>10} {1:>30} {2:>50}".format(cfg.cou_codes[cou_code], cou_dict['name_zh'], fName), file=log)
 
                     w = csv.writer(log_csv, delimiter=',')
 
-                    data = [cou_codes[cou_code], cou_dict['name_zh'], '', fName]
+                    keyword_freq_list = keywordAnalyser(join(str(folder),fName))
+                    data = [cfg.cou_codes[cou_code], cou_dict['name_zh'], '', fName] + keyword_freq_list
                     w.writerow(data)
                     ques.close()
 
