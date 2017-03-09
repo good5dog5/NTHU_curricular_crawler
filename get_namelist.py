@@ -23,6 +23,7 @@ except ImportError:
 import config as cfg
 import csv 
 import logging
+import textract
 
 def with_retry(request_function):
     def function(url, max_retries=32, **kwargs):
@@ -117,14 +118,24 @@ def download_syllabus_file(path, req, cou_dict, filename):
         
     return fName
 
+
 def keywordAnalyser(fname):
 
-    with open(fname, 'r') as f:
-        content = f.read().replace('\n', '')
-        wordfreq = [len(re.findall(keyword, content)) for keyword in keyword_list]
-        print(wordfreq)
+    if fname.endswith(".txt"):
+        with open(fname, 'r') as f:
+            content = f.read().replace('\n', '')
 
-    return OrderedDict(zip(keyword_list, wordfreq))
+            wordfreq = [len(re.findall(keyword, content)) for keyword in cfg.keywords_list]
+            return wordfreq
+            # return OrderedDict(zip(cfg.keywords_list, wordfreq))
+
+    elif fname.endswith(".pdf"):
+        text = textract.process(fname)
+        content = text.decode('utf-8')
+
+        wordfreq = [len(re.findall(keyword, content)) for keyword in cfg.keywords_list]
+        return wordfreq
+        # return OrderedDict(zip(cfg.keywords_list, wordfreq))
 
 if __name__ == '__main__':
 
