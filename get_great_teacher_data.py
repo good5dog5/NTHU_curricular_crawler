@@ -13,7 +13,7 @@ from requests_futures.sessions import FuturesSession
 
 from lxml import html, etree
 from crawler.crawler import crawl_course, crawl_dept
-from crawler.course import gen_cou_codes_dict, course_from_syllabus
+from crawler.course import gen_cou_codes_dict, course_from_syllabus, EmptyResponse
 
 try:
     from crawler.decaptcha import Entrance, DecaptchaFailure
@@ -65,7 +65,7 @@ def get_course_no_list(treeObj):
 def gen_file_name(ys, cou_dict):
 
     dept = cfg.cou_codes[re.sub("[0-9]", "", cou_dict['no'].strip())]
-    return "-".join(s for s in [ys, dept, cou_dict['no'], cou_dict['name_zh']]).replace("/", "-")
+    return "-".join(s for s in [ys, dept,cou_dict['teacher'], cou_dict['no'], cou_dict['name_zh']]).replace("/", "-")
 
 def syllabus_from_curriculum(acixstore, cou_no):
     data = { 'ACIXSTORE': acixstore, 'c_key': cou_no }
@@ -140,7 +140,7 @@ if __name__ == '__main__':
 
         for year_semester in sorted(cfg.year_semester_dict.keys()):
 
-            folder = join("./syllabus_download", cfg.year_semester_dict[year_semester])
+            folder = join("./syllabus_download", '傑出教師'+cfg.year_semester_dict[year_semester])
             if not os.path.exists(folder):
                 os.makedirs(folder)
 
@@ -156,6 +156,7 @@ if __name__ == '__main__':
 
                 course_no_list   = get_course_no_list(curriculum_text)
                 for no in course_no_list:
+                    print (no.text)
 
                     if no.text in cfg.id_2_pass_list:
                         print("{0} been passed".format(no.text))
@@ -163,6 +164,12 @@ if __name__ == '__main__':
 
                     syllabus_req = syllabus_from_curriculum(acixstore, no.text)
                     cou_dict = course_from_syllabus(syllabus_req.text)
+                    # print(year_semester.rsplit('|',1)[0])
+                    if cou_dict['teacher']  in cfg.great_teacher_dict[year_semester.rsplit('|',1)[0]] or cou_dict['teacher']  in cfg.great_teacher_alltime:
+                        pass
+                    else:
+                        continue
+
                     syllabus_file_name = gen_file_name(cfg.year_semester_dict[year_semester], cou_dict)
                     # print(cfg.cou_codes[re.sub("[0-9]", "", cou_dict['no'].strip())], file=log)
 
@@ -171,8 +178,7 @@ if __name__ == '__main__':
 
                     w = csv.writer(log_csv, delimiter=',')
 
-                    keyword_freq_list = keywordAnalyser(join(str(folder),fName))
-                    data = [cfg.cou_codes[cou_code], cou_dict['name_zh'], '', fName] + keyword_freq_list
+                    data = [cfg.cou_codes[cou_code], cou_dict['name_zh'], '', fName]
                     w.writerow(data)
 
 
